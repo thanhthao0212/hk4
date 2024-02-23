@@ -28,7 +28,7 @@
 
 			<td>
 			<a th:href="@{'/account/edit/' + ${account.id}}">Edit</a> ||
-			<a th:href="@{'/account/updatePassword'}">Change Pass</a> ||
+			<a th:href="@{'/account/updatePassword/' + ${account.email}}">Change Pass</a> ||
 			<a th:href="@{'/account/delete/' + ${account.id}}" onclick="return confirm('Are you sure')">Delete</a>  
 			</td>
 		</tr>

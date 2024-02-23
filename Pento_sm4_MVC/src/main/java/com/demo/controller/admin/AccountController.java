@@ -3,6 +3,7 @@ package com.demo.controller.admin;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -18,7 +19,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.demo.entities.Account;
 import com.demo.entities.Role;
+import com.demo.helpers.SecurityCodeHelper;
 import com.demo.service.AccountService;
+import com.demo.service.MailService;
 import com.demo.service.RoleService;
 
 import jakarta.servlet.http.HttpSession;
@@ -31,6 +34,12 @@ public class AccountController {
 	private AccountService accountService;
 	@Autowired
 	private RoleService roleService;
+	@Autowired
+	private MailService mailService;
+
+	@Autowired
+	private Environment environment;
+	
 	
 	@GetMapping({ "index", "", "/" })
 	public String index(ModelMap modelMap) {
@@ -99,6 +108,40 @@ public class AccountController {
 		return "redirect:/account/index";
 	}
 	
+	// Change PassWord
+	// Update Password
+		@GetMapping({"updatePassword/{email}"})
+		public String updatePassword(@PathVariable("email") String email, 
+				RedirectAttributes redirectAttributes, ModelMap modelMap) {
+			Account account = accountService.findByEmail(email);
+			if (account == null) {
+				redirectAttributes.addFlashAttribute("msg", "Email not found");
+			} else {
+				modelMap.put("account", account);
+				return "account/updatePassword";
+			}
+			return "redirect:/account/login";
+		}
+
+		
+		@PostMapping({ "updatePassword" })
+		public String updatePassword(@ModelAttribute("account") Account account, RedirectAttributes redirectAttributes) {
+			try {
+				account.setStatus("0");
+				if (accountService.save(account)) {
+					redirectAttributes.addFlashAttribute("msg", "Edit Success");
+				} else {
+					redirectAttributes.addFlashAttribute("msg", "Edit Failed");
+					
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				redirectAttributes.addFlashAttribute("msg", e.getMessage());
+			}
+			return "redirect:/account/index";
+		}
+		
+	
 	//
 	@RequestMapping(value = "verify", method = RequestMethod.GET)
 	public String verify(@RequestParam("email") String email, @RequestParam("code") String code,
@@ -108,7 +151,7 @@ public class AccountController {
 			redirectAttributes.addFlashAttribute("msg", "email not found");
 		} else {
 			if (code.equals(account.getSecurityCode())) {
-				account.setStatus(true);
+				account.setStatus(code);
 				if (accountService.save(account)) {
 					redirectAttributes.addFlashAttribute("msg", "Actived");
 				} else {
@@ -143,49 +186,14 @@ public class AccountController {
 			account.setSecurityCode(securityCode);
 			if (accountService.save(account)) {
 				String content = "Nhan vao <a href='http://localhost:8085/account/updatepassword?code=" + securityCode
-						+ "&email=" + account.getemail() + "'>day</a> de cap nhat password";
+						+ "&email=" + account.getEmail() + "'>day</a> de cap nhat password";
 				mailService.send(environment.getProperty("spring.mail.email"), account.getEmail(), "Update Password",
 						content);
 			}
 			return "redirect:/account/login";
 		}
 	}
-	
-	// Update Password
-	@GetMapping({"updatePassword"})
-	public String updatePassword(@RequestParam("email") String email, RedirectAttributes redirectAttributes, ModelMap modelMap) {
-		Account account = accountService.findByEmail(email);
-		if (account == null) {
-			redirectAttributes.addFlashAttribute("msg", "Email not found");
-		} else {
-			if (code.equals(account.getSecurityCode())) {
-				modelMap.put("email", email);
-				return "account/updatepassword";
-			} else {
-				redirectAttributes.addFlashAttribute("msg", "Security Code is Invalid");
-			}
-		}
-		return "redirect:/account/login";
-	}
-	
-	@PostMapping({ "updatePassword" })
-	public String updatePassword(@ModelAttribute("account") Account account, RedirectAttributes redirectAttributes) {
-		try {
-			account.setStatus("0");
-			if (accountService.save(account)) {
-				redirectAttributes.addFlashAttribute("msg", "Edit Success");
-			} else {
-				redirectAttributes.addFlashAttribute("msg", "Edit Failed");
-				
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("msg", e.getMessage());
-		}
-		return "redirect:/account/index";
-	}
-	
-	
+
 	
 	@GetMapping({"changePass/{id}"})
 	public String changePassword(@PathVariable("id") int id, ModelMap modelMap) {
