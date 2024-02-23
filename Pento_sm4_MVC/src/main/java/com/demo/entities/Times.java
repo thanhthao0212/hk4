@@ -1,6 +1,9 @@
 package com.demo.entities;
 // Generated Feb 23, 2024, 1:06:06 PM by Hibernate Tools 4.3.6.Final
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.*;
 
 /**
@@ -14,6 +17,7 @@ public class Times implements java.io.Serializable {
 	private Days days;
 	private Hours hours;
 	private Months months;
+	private Set<Orders> orderses = new HashSet<Orders>(0);
 
 	public Times() {
 	}
@@ -22,6 +26,13 @@ public class Times implements java.io.Serializable {
 		this.days = days;
 		this.hours = hours;
 		this.months = months;
+	}
+
+	public Times(Days days, Hours hours, Months months, Set<Orders> orderses) {
+		this.days = days;
+		this.hours = hours;
+		this.months = months;
+		this.orderses = orderses;
 	}
 
 	@Id
@@ -64,6 +75,15 @@ public class Times implements java.io.Serializable {
 
 	public void setMonths(Months months) {
 		this.months = months;
+	}
+
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "times")
+	public Set<Orders> getOrderses() {
+		return this.orderses;
+	}
+
+	public void setOrderses(Set<Orders> orderses) {
+		this.orderses = orderses;
 	}
 
 }
